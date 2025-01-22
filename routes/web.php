@@ -7,14 +7,36 @@ use App\Http\Controllers\Admin\QueryController;
 use App\Http\Controllers\Admin\AgentController;
 use App\Http\Controllers\Admin\ComplaintController;
 use App\Http\Controllers\Admin\SystemConfigController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\ProfileController;
+use Illuminate\Support\Facades\Auth;
 
 // 前台路由
-Route::get('/', function () {
-    return view('query.index');
+Route::get('/', [HomeController::class, 'index'])->name('home');
+
+// 认证路由
+Auth::routes(['verify' => true]);
+
+// 需要登录的路由
+Route::middleware(['auth'])->group(function () {
+    // 查询
+    Route::resource('queries', QueryController::class);
+    Route::post('queries/{query}/pay', [QueryController::class, 'pay'])->name('queries.pay');
+    Route::get('queries/{query}/download', [QueryController::class, 'download'])->name('queries.download');
+    
+    // 个人中心
+    Route::get('profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::get('profile/password', [ProfileController::class, 'password'])->name('profile.password');
+    Route::put('profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
 });
 
-Route::post('/sms/send', [SmsController::class, 'send'])->name('sms.send');
-Route::post('/query', [QueryController::class, 'store'])->name('query.store');
+// 静态页面
+Route::view('about', 'about')->name('about');
+Route::view('contact', 'contact')->name('contact');
+Route::view('help', 'help')->name('help');
+Route::view('privacy', 'privacy')->name('privacy');
+Route::view('terms', 'terms')->name('terms');
 
 // 支付回调
 Route::post('/payment/notify/{type}', [PaymentController::class, 'notify'])

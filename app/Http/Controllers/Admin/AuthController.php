@@ -16,27 +16,25 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $credentials = $request->validate([
-            'username' => 'required',
-            'password' => 'required'
+            'username' => 'required|string',
+            'password' => 'required|string',
         ]);
 
-        if (Auth::guard('admin')->attempt($credentials)) {
-            // 更新最后登录时间
-            Auth::guard('admin')->user()->update([
-                'last_login_at' => now()
-            ]);
-
+        if (Auth::guard('admin')->attempt($credentials, $request->boolean('remember'))) {
+            $request->session()->regenerate();
             return redirect()->intended(route('admin.dashboard'));
         }
 
         return back()->withErrors([
             'username' => '用户名或密码错误',
-        ]);
+        ])->withInput($request->only('username', 'remember'));
     }
 
-    public function logout()
+    public function logout(Request $request)
     {
         Auth::guard('admin')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
         return redirect()->route('admin.login');
     }
 } 
